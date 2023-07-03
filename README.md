@@ -53,22 +53,55 @@ cardid_features['first_to_reference_day']  =  (cardid_features['reference_day'] 
 ```
 
 ## Stage II: Baseline Training
-* Model: Random Forest
-* Max_depth: 10
-* Features: 80
-* min_samples_leaf: 31
-* n_estimators: 81
-* RMSE after Cross-validation: 3.686
+* ```Model:``` Random Forest
+* ```Max_depth:``` 10
+* ```Features:``` 80
+* ```min_samples_leaf:``` 31
+* ```n_estimators:``` 81
+* ```RMSE``` after Cross-validation: 3.686
 
 
-## Stage III:
+## Stage III: Assemle Learning & Merge
+![image](https://github.com/EthanWTL/Elo-Customer-Loyalty/assets/97998419/d03eeb47-f0fc-46e9-ac7b-55eb95c53721)
 
-Step I:
-Split datasets into normal datas and anomaly data
+From the graph above we can see there's anomaly group presented in our dataset, further investigation proof that we need to build first layer of model to filter out this group.
 
-![1](https://user-images.githubusercontent.com/97998419/223620361-47d5a857-406b-4b32-bac8-132b9682fcd9.png)
+we built four model template, we will use Catboost for binary classification between anomaly group and normal customer group, and rest of the three models for further regression.
 
-![2](https://user-images.githubusercontent.com/97998419/223620440-e8b16f85-c2ee-433f-a4fe-efb185d330ad.png)
+```python
+if model_type == 'lgb':
+       trn_data = lgb.Dataset(X[trn_idx], y[trn_idx])
+       val_data = lgb.Dataset(X[val_idx], y[val_idx])
+       clf = lgb.train(params, trn_data, num_boost_round=20000, valid_sets=[trn_data, val_data], verbose_eval=100, early_stopping_rounds=300)
+       oof[val_idx] = clf.predict(X[val_idx], num_iteration=clf.best_iteration)
+       predictions += clf.predict(X_test, num_iteration=clf.best_iteration) / folds.n_splits
+        
+if model_type == 'xgb':
+       trn_data = xgb.DMatrix(X[trn_idx], y[trn_idx])
+       val_data = xgb.DMatrix(X[val_idx], y[val_idx])
+       watchlist = [(trn_data, 'train'), (val_data, 'valid_data')]
+       clf = xgb.train(dtrain=trn_data, num_boost_round=20000, evals=watchlist, early_stopping_rounds=200, verbose_eval=100, params=params)
+       oof[val_idx] = clf.predict(xgb.DMatrix(X[val_idx]), ntree_limit=clf.best_ntree_limit)
+       predictions += clf.predict(xgb.DMatrix(X_test), ntree_limit=clf.best_ntree_limit) / folds.n_splits
+        
+if (model_type == 'cat') and (eval_type == 'regression'):
+       clf = CatBoostRegressor(iterations=20000, eval_metric='RMSE', **params)
+       clf.fit(X[trn_idx], y[trn_idx], eval_set=(X[val_idx], y[val_idx]),cat_features=[], use_best_model=True, verbose=100)
+       oof[val_idx] = clf.predict(X[val_idx])
+       predictions += clf.predict(X_test) / folds.n_splits
+            
+if (model_type == 'cat') and (eval_type == 'binary'):
+       clf = CatBoostClassifier(iterations=20000, eval_metric='Logloss', **params)
+       clf.fit(X[trn_idx], y[trn_idx],eval_set=(X[val_idx], y[val_idx]),cat_features=[], use_best_model=True, verbose=100)
+       oof[val_idx] = clf.predict_proba(X[val_idx])[:,1]
+       predictions += clf.predict_proba(X_test)[:,1] / folds.n_splits
+
+print(predictions)
+if eval_type == 'regression':
+       scores.append(mean_squared_error(oof[val_idx], y[val_idx])**0.5)
+if eval_type == 'binary':
+       scores.append(log_loss(y[val_idx], oof[val_idx]))
+```
 
 Step II: 
 apply regression models on both datasets and concat the results
