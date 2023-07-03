@@ -3,11 +3,15 @@ Welcome,
 
 This repo walk through an independent project that analysis transaction data in a Brazil Shopping mall.
 
-You can download the [dataset](https://www.kaggle.com/competitions/elo-merchant-category-recommendation) and get an overview of the compettion on Kaggle also.
+You can download the [dataset](https://www.kaggle.com/competitions/elo-merchant-category-recommendation/data) and get an overview of the compettion on [Kaggle](https://www.kaggle.com/competitions/elo-merchant-category-recommendation) also.
 
-Stage I: create baseline models in Ranfomforest.
+## Stage I: Data Engineering
 
-Stage II:
+
+## Stage II: create baseline models in Ranfom Forest.
+
+
+## Stage III:
 
 Step I:
 Split datasets into normal datas and anomaly data
