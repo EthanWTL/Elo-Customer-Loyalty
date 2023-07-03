@@ -6,7 +6,41 @@ This repo walk through an independent project that analysis transaction data in 
 You can download the [dataset](https://www.kaggle.com/competitions/elo-merchant-category-recommendation/data) and get an overview of the compettion on [Kaggle](https://www.kaggle.com/competitions/elo-merchant-category-recommendation) also.
 
 ## Stage I: Data Engineering
+Here is an overview of the data that we received and how we perform data engineer.
+* train.csv - the training set
+* test.csv - the test set
+* merchants.csv - additional information about all merchants / merchant_ids in the dataset.
+* new_merchant_transactions.csv - two months' worth of data for each card_id containing ALL purchases that card_id made at merchant_ids that were not visited in the historical data.
 
+We first identify numeric columns and category columns
+
+```python
+numeric_cols = ['purchase_amount', 'installments']
+
+category_cols = ['authorized_flag', 'city_id', 'category_1',
+       'category_3', 'merchant_category_id','month_lag','most_recent_sales_range',
+                 'most_recent_purchases_range', 'category_4',
+                 'purchase_month', 'purchase_hour_section', 'purchase_day']
+
+id_cols = ['card_id', 'merchant_id']
+```
+
+Then cross between two different kind of columns to generate first round of data engineering.
+```python
+columns = transaction.columns.tolist()
+idx = columns.index('card_id')
+category_cols_index = [columns.index(col) for col in category_cols]
+numeric_cols_index = [columns.index(col) for col in numeric_cols]
+
+for i in range(transaction.shape[0]):
+    va = transaction.loc[i].values
+    card = va[idx]
+    for cate_ind in category_cols_index:
+        for num_ind in numeric_cols_index:
+            col_name = '&'.join([str(columns[cate_ind]), str(columns[num_ind]), str(va[cate_ind])])
+            features[card][col_name] = features[card].get(col_name, 0) + va[num_ind]
+    num += 1
+```
 
 ## Stage II: create baseline models in Ranfom Forest.
 
