@@ -6,6 +6,7 @@ This repo walk through an independent project that analysis transaction data in 
 You can download the [dataset](https://www.kaggle.com/competitions/elo-merchant-category-recommendation/data) and get an overview of the compettion on [Kaggle](https://www.kaggle.com/competitions/elo-merchant-category-recommendation) also.
 
 ## Stage I: Data Engineering
+### Cross Generation
 Here is an overview of the data that we received and how we perform data engineer.
 * train.csv - the training set
 * test.csv - the test set
@@ -42,6 +43,8 @@ for i in range(transaction.shape[0]):
             features[card][col_name] = features[card].get(col_name, 0) + va[num_ind]
     num += 1
 ```
+
+### NLP Feature Generating
 We incorprate NLP ideas for feature generating, like shown below
 ```python
 # first to activation day
@@ -148,7 +151,8 @@ sub_df.to_csv('predictions_trick&stacking.csv', index=False)
 ```
 * ```RMSE```: 3.601
 * equivilant to ```10% percent``` on Kaggle
-  
+
+
 ---
 
 ## Contact
