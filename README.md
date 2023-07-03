@@ -1,4 +1,10 @@
 # Elo-Customer-Loyalty
+Welcome,
+
+This repo walk through an independent project that analysis transaction data in a Brazil Shopping mall.
+
+You can download the [dataset](https://www.kaggle.com/competitions/elo-merchant-category-recommendation) and get an overview of the compettion on Kaggle also.
+
 Stage I: create baseline models in Ranfomforest.
 
 Stage II:
