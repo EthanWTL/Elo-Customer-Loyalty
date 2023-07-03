@@ -25,6 +25,7 @@ category_cols = ['authorized_flag', 'city_id', 'category_1',
 id_cols = ['card_id', 'merchant_id']
 ```
 
+
 Then cross between two different kind of columns to generate first round of data engineering.
 ```python
 columns = transaction.columns.tolist()
@@ -51,6 +52,19 @@ cardid_features['activation_to_reference_day']  =  (cardid_features['reference_d
 cardid_features['first_to_reference_day']  =  (cardid_features['reference_day'] - cardid_features['first_day']).dt.days
 # reference day to now 
 ```
+```python
+for col in train.columns:
+    if 'merchant_category_id_month_lag_nunique_' in col and '_pivot_supp' in col:
+        del_cols3.append(col)
+    if 'city_id' in col and '_pivot_supp' in col:
+        del_cols3.append(col)
+    if 'month_diff' in col and 'hist_last2_' in col:
+        del_cols3.append(col)
+    if 'month_diff_std' in col or 'month_diff_gap' in col:
+        del_cols3.append(col) 
+```
+
+
 
 ## Stage II: Baseline Training
 * ```Model:``` Random Forest
@@ -62,6 +76,7 @@ cardid_features['first_to_reference_day']  =  (cardid_features['reference_day'] 
 
 
 ## Stage III: Assemle Learning & Merge
+### Define Models
 ![image](https://github.com/EthanWTL/Elo-Customer-Loyalty/assets/97998419/d03eeb47-f0fc-46e9-ac7b-55eb95c53721)
 
 From the graph above we can see there's anomaly group presented in our dataset, further investigation proof that we need to build first layer of model to filter out this group.
@@ -103,8 +118,40 @@ if eval_type == 'binary':
        scores.append(log_loss(y[val_idx], oof[val_idx]))
 ```
 
-Step II: 
-apply regression models on both datasets and concat the results
+### Run Models
+for each model, we run two both **Binary** and **Regression** Models for filtering anomaly and merging.
 
-![3](https://user-images.githubusercontent.com/97998419/223620509-b918c8f0-e03f-4305-abad-f99dd9c59e00.png)
-![4](https://user-images.githubusercontent.com/97998419/223620581-a6bc2903-cb81-48ad-b1b4-0b207353a981.png)
+```python
+xgb_params = {'eta':0.05, 'max_leaves':47, 'max_depth':10, 'subsample':0.8, 'colsample_bytree':0.8,
+              'min_child_weight':40, 'max_bin':128, 'reg_alpha':2.0, 'reg_lambda':2.0, 
+              'objective':'reg:linear', 'eval_metric':'rmse', 'silent': True, 'nthread':4}
+folds = KFold(n_splits=5, shuffle=True, random_state=2018)
+
+#Regression for both normal dataset and mix dataset
+print('='*10,'Regression','='*10)
+oof_xgb , predictions_xgb , scores_xgb  = train_model(X_train , X_test, y_train , params=xgb_params, folds=folds, model_type='xgb', eval_type='regression')
+print('='*10,'without outliers Regression','='*10)
+oof_nxgb, predictions_nxgb, scores_nxgb = train_model(X_ntrain, X_test, y_ntrain, params=xgb_params, folds=folds, model_type='xgb', eval_type='regression')
+
+#Classification for filtering Outliers
+print('='*10,'Categorical','='*10)
+xgb_params['objective'] = 'binary:logistic'
+xgb_params['metric']    = 'binary_logloss'
+oof_bxgb, predictions_bxgb, scores_bxgb = train_model(X_train , X_test, y_train_binary, params=xgb_params, folds=folds, model_type='xgb')
+```
+### Trick Merge:
+After 4 models training and cross validation, we perform trick merge to further increase the accuracy
+```python
+sub_df = pd.read_csv('data/sample_submission.csv')
+sub_df["target"] = (predictions_bstack*-33.219281 + (1-predictions_bstack)*predictions_nstack)*0.5 + predictions_stack*0.5
+sub_df.to_csv('predictions_trick&stacking.csv', index=False)
+```
+* ```RMSE```: 3.601
+* equivilant to ```10% percent``` on Kaggle
+  
+---
+
+## Contact
+Ethan Wang - [e13wang@gmail.com](e13wang@gmail.com) - [Linkedin Profile](https://www.linkedin.com/in/ethan-wang-938588175/)
+
+Project Link: [https://github.com/matsudatakeshi27/HeartDiseasePakula](https://github.com/EthanWTL/Elo-Customer-Loyalty)
