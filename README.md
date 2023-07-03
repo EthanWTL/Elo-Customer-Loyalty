@@ -41,8 +41,24 @@ for i in range(transaction.shape[0]):
             features[card][col_name] = features[card].get(col_name, 0) + va[num_ind]
     num += 1
 ```
+We incorprate NLP ideas for feature generating, like shown below
+```python
+# first to activation day
+cardid_features['first_to_activation_day']  =  (cardid_features['first_day'] - cardid_features['activation_day']).dt.days
+# activation to reference day 
+cardid_features['activation_to_reference_day']  =  (cardid_features['reference_day'] - cardid_features['activation_day']).dt.days
+# first to last day 
+cardid_features['first_to_reference_day']  =  (cardid_features['reference_day'] - cardid_features['first_day']).dt.days
+# reference day to now 
+```
 
-## Stage II: create baseline models in Ranfom Forest.
+## Stage II: Baseline Training
+* Model: Random Forest
+* Max_depth: 10
+* Features: 80
+* min_samples_leaf: 31
+* n_estimators: 81
+* RMSE after Cross-validation: 3.686
 
 
 ## Stage III:
